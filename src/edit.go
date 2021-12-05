@@ -83,7 +83,6 @@ func PrintLines(lines []string){
 
 func ScriviSlice(writer *bufio.Writer, linee []string){
 	for _,v := range linee{
-		fmt.Println([]byte(v))
 		v += "\n"
 		fmt.Fprint(writer, v)
 	}
@@ -98,6 +97,14 @@ func AggiungiLinea(linee []string, lineaDaAggiungere string, pos int) []string{
 	linee[pos] = lineaDaAggiungere
 	return linee
 }
+func EliminaLinea(linee []string, pos int) []string{
+	linee = append(linee[:pos], linee[pos+1:]...)
+	return linee
+}
+
+func pulisciSchermo(){
+	fmt.Print("\033[H\033[2J")
+}
 
 func main(){
 	// prendi nome file da argomenti
@@ -108,20 +115,28 @@ func main(){
 		fmt.Println("Usage: edit filename")
 		return
 	}
-	// il file esiste? se si leggo il contenuto altrimenti creo il file
-	f, err := os.OpenFile(file_name, os.O_RDONLY|os.O_CREATE, 0755)
-	if err != nil{
-		fmt.Println("Error opening / creating file:", err)
-	}
-	// ora il file è creato / stato aperto 
+
+	
 	var lines []string
-	lines = LeggiLinee(f)
+	_, err := os.Stat(file_name)
+	if err != nil{
+		// il file esiste? se si leggo il contenuto altrimenti creo il file
+		f, err := os.OpenFile(file_name, os.O_RDONLY|os.O_CREATE, 0755)
+		if err != nil{
+			fmt.Println("Error opening / creating file:", err)
+		}
+		// ora il file è creato / stato aperto 
+
+		lines = LeggiLinee(f)
+		
+		f.Close()
+	}
 	// ora ho letto tutte le linee
 	var quit bool
 	// CICLO OPERAZIONI PARTE DA QUA
 	for !quit {
 		// pulisco lo schermo e scrivo a schermo tutte le linee
-		// fmt.Print("\033[H\033[2J")
+		pulisciSchermo()
 		PrintLines(lines)
 		// prendo il comando in input
 		/*
@@ -134,11 +149,9 @@ func main(){
 		fmt.Print(":")
 		com = LeggiLinea(os.Stdin)
 		switch {
-		case []rune(com)[0] == 'i':
+		case []rune(com)[0] == 'b':
 			// devo controllare che vi siano x e n
 			cmd_args := strings.Split(com, " ")
-			fmt.Println("dentro il case switch: ", cmd_args)
-			
 			if len(cmd_args) == 3 && IsStringaNumero(cmd_args[1]) && IsStringaNumero(cmd_args[2]){
 				// prendo i numeri come interi per comodità
 				var x, n int
@@ -149,6 +162,56 @@ func main(){
 					lines = AggiungiLinea(lines, " ", x)
 				}
 			}
+		case []rune(com)[0] == 'i':
+			// devo controllare che vi siano x e n
+			cmd_args := strings.Split(com, " ")
+			
+			// tutto cioò che viene messo dopo il secondo spazio viene preso come testo da inserire
+			if len(cmd_args) >= 3 && IsStringaNumero(cmd_args[1]){
+				
+				// prendo posizione come stringa e il testo da inserire nella posizione come stringa
+				stringa_da_inserire := strings.Join(strings.Split(com, " ")[2:], " ")
+				i, _ := strconv.Atoi(cmd_args[1])
+				fmt.Println(len(lines)-1, " i:", i)
+				// se la riga selezionata non è inclusa nella lunghezza corrente allora inserisco righe bianche fino a quando lo è
+				if i > len(lines){
+					lun := len(lines)
+					for j := 0; j < lun; j++{
+						lines = AggiungiLinea(lines, " ", len(lines)-1)
+					}
+				}
+				// eseguo il comando
+				lines = AggiungiLinea(lines, stringa_da_inserire, i)
+				
+			}
+		case []rune(com)[0] == 'e':
+			// devo controllare che vi siano x e n
+			cmd_args := strings.Split(com, " ")
+			// tutto cioò che viene messo dopo il secondo spazio viene preso come testo da inserire
+			if len(cmd_args) >= 3 && IsStringaNumero(cmd_args[1]){
+				// prendo posizione come stringa e il testo da inserire nella posizione come stringa
+				stringa_da_inserire := strings.Join(strings.Split(com, " ")[2:], " ")
+				i, _ := strconv.Atoi(cmd_args[1])
+				fmt.Println("stringa_da_inserire")
+				fmt.Println(stringa_da_inserire)
+				// eseguo il comando
+				lines[i] = stringa_da_inserire
+			}
+		case []rune(com)[0] == 'D':
+			// elimina la riga nell'indice cmd_args[1]
+			cmd_args := strings.Split(com, " ")
+			if len(cmd_args) == 2 && IsStringaNumero(cmd_args[1]){
+				i, _ := strconv.Atoi(cmd_args[1])
+				lines = EliminaLinea(lines, i)
+			}
+		case []rune(com)[0] == 'd':
+			// mette una riga vuota alla posizione cmd_args[1]
+			cmd_args := strings.Split(com, " ")
+			if len(cmd_args) == 2 && IsStringaNumero(cmd_args[1]){
+				i, _ := strconv.Atoi(cmd_args[1])
+				lines[i] = " "
+			}
+		
 		case []rune(com)[0] == 'q':
 			quit = true
 			
@@ -164,12 +227,13 @@ func main(){
 	}
 	// CICLO OPERAZIONI FINISCE QUA
 
-	f.Close()
 	// riapro file in scrittura stavolta
-	f, err = os.OpenFile(file_name, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0755)
+	f, err := os.OpenFile(file_name, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0755)
 	if err != nil{
 		fmt.Println("Error opening / creating file:", err)
 	}
 	// ora scrivo la slice nel file
-	ScriviSlice(bufio.NewWriter(f), lines)	
+	ScriviSlice(bufio.NewWriter(f), lines)
+	// pulisco schermo
+	fmt.Print("\033[H\033[2J")	
 }
