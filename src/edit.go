@@ -89,22 +89,13 @@ func ScriviSlice(writer *bufio.Writer, linee []string){
 	writer.Flush()
 }
 
-func AggiungiLinea(linee []string, lineaDaAggiungere string, pos int)[]string{
-	// fmt.Println("ATTENZIONE ATTENZIONE! ")
-	var temp []string
-	prima_parte := linee[:pos]
-	seconda_parte := linee[pos:]
-	fmt.Println("Analisi secondo Append: ",linee)
-	// mette in temp linee da 0 a pos-1 + lineaDaAggiungere
-	temp = append(prima_parte, lineaDaAggiungere)
-	fmt.Println("PRIMO APPEND", temp)
-	// mette in temp linee da 0 a pos-1 + lineaDaAggiungere + 
-	temp = append(temp, seconda_parte...)
-	fmt.Println("Analisi secondo Append: ",linee)
-	fmt.Println("secondo APPEND", temp)
-	
-	fmt.Println("lunghezza di temp:", len(temp))
-	return temp
+func AggiungiLinea(linee []string, lineaDaAggiungere string, pos int) []string{
+	if len(linee) == pos{
+		return append(linee, lineaDaAggiungere)
+	}
+	linee = append(linee[:pos+1], linee[pos:]...)
+	linee[pos] = lineaDaAggiungere
+	return linee
 }
 
 func main(){
