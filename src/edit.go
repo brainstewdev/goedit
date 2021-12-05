@@ -84,6 +84,7 @@ func PrintLines(lines []string){
 func ScriviSlice(writer *bufio.Writer, linee []string){
 	for _,v := range linee{
 		fmt.Println([]byte(v))
+		v += "\n"
 		fmt.Fprint(writer, v)
 	}
 	writer.Flush()
