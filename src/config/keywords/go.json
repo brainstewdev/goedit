@@ -7,9 +7,30 @@
     ],
     "keywords":
     [
-        "return",
+        "break",
+        "case",
+        "chan",
+        "const",
+        "continue",
+        "default",
+        "defer",
+        "else",
+        "fallthrough",
+        "for",
         "func",
+        "go",
+        "goto",
+        "if",
         "import",
-        "package"
+        "interface",
+        "map",
+        "package",
+        "range",
+        "return",
+        "select",
+        "struct",
+        "switch",
+        "type",
+        "var"
     ]
 }
