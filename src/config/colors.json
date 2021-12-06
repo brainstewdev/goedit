@@ -4,7 +4,7 @@
             "background": "\u001b[48;5;0m",
             "base": "\u001b[37m",
             "reset": "\u001b[0m",
-            "keywords": "\u001b[21m",
+            "keywords": "\u001b[4m\u001b[38;5;21m",
             "types": "\u001b[90m",
             "numbers": "\u001b[38;5;25m",
             "stringsLiterals": "\u001b[38;5;33m"
@@ -13,7 +13,7 @@
         {
             "background": "\u001b[48;5;0m",
             "base": "\u001b[38;5;200m",
-            "reset": "\u001b[38;5;30m",
+            "reset": "\u001b[38;5;68m",
             "keywords": "\u001b[38;5;132m",
             "types": "\u001b[38;5;209m",
             "numbers": "\u001b[38;5;124m",

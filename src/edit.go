@@ -195,12 +195,13 @@ func PrintLines(lines []string) {
 			}
 			// stampo il token
 			if !disable_print{
-			fmt.Print(v + " ")
+			fmt.Print(v)
 			}
 			// resetto il colore
 			if !printing_string_literal {
 				fmt.Print(colorschemes[cur_scheme].Reset)
 			}
+			fmt.Print(" ")
 		}
 		// vado a capo
 		fmt.Println()
