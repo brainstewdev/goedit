@@ -23,13 +23,8 @@ type importantWords_type struct {
 
 var keywords importantWords_type
 
-type colors_type struct {
-	/*
-		"base": "\u001b[31m",
-	    "reset": "\u001b[0m",
-	    "keywords": "\u001b[34m",
-	    "types": "\u001b[35m"
-	*/
+type scheme_type struct {
+	Background		string
 	Base            string
 	Reset           string
 	Keywords        string
@@ -38,7 +33,8 @@ type colors_type struct {
 	StringsLiterals string
 }
 
-var colormap colors_type
+var colorschemes map[string]scheme_type
+var cur_scheme string
 
 func JoinLinee(linee []string) string {
 	var sb strings.Builder
@@ -133,6 +129,7 @@ func SliceContains(s []string, v string) bool {
 }
 
 func PrintLines(lines []string) {
+	
 	// stampo riga per riga con l'indice a sinistra
 	for i := 0; i < len(lines); i++ {
 		// per evidenziare le parole:
@@ -145,9 +142,10 @@ func PrintLines(lines []string) {
 		// fino a quando incontro una parola che contiene delle virgolette
 		// nel testo fra virgolette NON ci deve essere evidenziazione sintattica
 		printing_string_literal := false
-		fmt.Print(colormap.Reset)
+		fmt.Print(colorschemes[cur_scheme].Reset)
+		fmt.Print(colorschemes[cur_scheme].Background)
 		fmt.Print(i, "\t: ")
-		fmt.Print(colormap.Base)
+		fmt.Print(colorschemes[cur_scheme].Base)
 		tokens := strings.Split(lines[i], " ")
 		for _, v := range tokens {
 			// controllo, se il token corrente contiene un " allora devo stampare la parte fino a quello e poi metto printing_string_literal a vero
@@ -155,7 +153,7 @@ func PrintLines(lines []string) {
 			if indice_start := strings.Index(v, "\""); indice_start != -1 {
 				// controllo se è un token che inizia e finisce con le virgolette 
 				if ([]rune(v))[0] == ([]rune(v))[len([]rune(v))-1] &&  string(([]rune(v))[0]) == "\""{
-					fmt.Print(colormap.StringsLiterals, v, colormap.Reset)
+					fmt.Print(colorschemes[cur_scheme].StringsLiterals, v, colorschemes[cur_scheme].Reset)
 					disable_print = true
 				} else{
 				if !printing_string_literal {
@@ -164,7 +162,7 @@ func PrintLines(lines []string) {
 					// stampo quello che c'è prima delle virgolette
 					fmt.Print(v[:indice_start])
 					// stampo quello che c'è dopo
-					fmt.Print(colormap.StringsLiterals)
+					fmt.Print(colorschemes[cur_scheme].StringsLiterals)
 					fmt.Print((v[indice_start:]))
 					fmt.Print(" ")
 					disable_print = true
@@ -172,7 +170,7 @@ func PrintLines(lines []string) {
 						printing_string_literal = false
 						fmt.Print(v[:indice_start+1])
 						// resetta il colore e mette printing_string_literal a false
-						fmt.Print(colormap.Reset)
+						fmt.Print(colorschemes[cur_scheme].Reset)
 						fmt.Print((v[indice_start+1:]))
 						disable_print = true
 						fmt.Print(" ")
@@ -184,15 +182,15 @@ func PrintLines(lines []string) {
 				switch {
 				case SliceContains(keywords.Keywords, v):
 					// stampo l'escape code per il colore delle keyword
-					fmt.Print(colormap.Keywords)
+					fmt.Print(colorschemes[cur_scheme].Keywords)
 
 				case SliceContains(keywords.Types, v):
 					// stampo l'escape code per il colore delle keyword
-					fmt.Print(colormap.Types)
+					fmt.Print(colorschemes[cur_scheme].Types)
 				case TokenContainsValidNumber(v):
-					fmt.Print(colormap.Numbers)
+					fmt.Print(colorschemes[cur_scheme].Numbers)
 				default:
-					fmt.Print(colormap.Base)
+					fmt.Print(colorschemes[cur_scheme].Base)
 				}
 			}
 			// stampo il token
@@ -201,7 +199,7 @@ func PrintLines(lines []string) {
 			}
 			// resetto il colore
 			if !printing_string_literal {
-				fmt.Print(colormap.Reset)
+				fmt.Print(colorschemes[cur_scheme].Reset)
 			}
 		}
 		// vado a capo
@@ -236,11 +234,12 @@ func main() {
 	var file_name string
 	if len(os.Args) > 1 {
 		file_name = os.Args[1]
-	} else {
-		fmt.Println("Usage: edit filename")
-		return
+		} else {
+			fmt.Println("Usage: edit filename")
+			return
 	}
-
+		
+		cur_scheme = "standard"
 	// se il file ha un'estensione cerco nella cartella keywords per le keyword di quel linguaggio
 	// questo perchè almeno poi nella stampa posso evidenziarle
 	if strings.Index(file_name, ".") != -1 {
@@ -270,11 +269,11 @@ func main() {
 		if err == nil {
 			// carico tutto il file in una sola stringa
 			tmp_string := strings.Join(LeggiLinee(f), "")
-			err = json.Unmarshal([]byte(tmp_string), &colormap)
+			err = json.Unmarshal([]byte(tmp_string), &colorschemes)
 		}
 		f.Close()
 	}
-
+	fmt.Println("mappa dei colori:" ,  colorschemes)
 	var lines []string
 	_, err = os.Stat(file_name)
 	if err == nil {
@@ -371,8 +370,17 @@ func main() {
 				lines[i] = " "
 			}
 
+		case []rune(com)[0] == 't':
+			cmd_args := strings.Split(com, " ")
+			if len(cmd_args) == 2 {
+				_, ok := colorschemes[cmd_args[1]]
+				if ok {
+					cur_scheme = cmd_args[1]
+				}
+			}
 		case []rune(com)[0] == 'q':
 			quit = true
+		
 		}
 		}
 		fmt.Println(lines)
