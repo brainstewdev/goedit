@@ -202,7 +202,7 @@ func main(){
 	// questo perchè almeno poi nella stampa posso evidenziarle
 	if strings.Index(file_name, ".") != -1{
 		// carica le keyword nella struttura dati dal file json corrispondente
-		keyword_path := "config/keywords/" + strings.Split(file_name,".")[1] +".json"
+		keyword_path := "config"+ string(os.PathSeparator) + "keywords" + string(os.PathSeparator) + strings.Split(file_name,".")[1] +".json"
 		// SE il file esiste (i linguaggi possono anche non essere supportati)
 		// carico il json contenuto nel file in una struttura adeguata
 		// altrimenti metto in quella struttura nil -> così posso controllare nella stampa
@@ -219,7 +219,7 @@ func main(){
 		}
 	}
 	// carico i colori
-	var color_path string = "config/colors.json"
+	var color_path string = "config" + string(os.PathSeparator) + "colors.json"
 	_, err := os.Stat(color_path)
 	if err == nil{
 		// carico il file
