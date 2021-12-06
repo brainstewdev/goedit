@@ -1,0 +1,6 @@
+{
+    "base": "\u001b[37m",
+    "reset": "\u001b[0m",
+    "keywords": "\u001b[34m",
+    "types": "\u001b[35m"
+}

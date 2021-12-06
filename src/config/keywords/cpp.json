@@ -1,0 +1,12 @@
+{
+    "types":[
+        "int",
+        "float",
+        "char"
+    ],
+    "keywords":[
+        "return",
+        "if",
+        "else"
+    ]
+}

@@ -1,0 +1,15 @@
+{
+    "types":
+    [
+        "int",
+        "float64",
+        "rune"
+    ],
+    "keywords":
+    [
+        "return",
+        "func",
+        "import",
+        "package"
+    ]
+}

@@ -1,5 +1,10 @@
 package main
 
+/*
+editor di testo, permette di editare una riga per volta inserendo riga e contenuto voluto.
+supporta inoltre l'evidenziazione della sintassi (dove per ogni linguaggio deve essere implementata)
+*/
+
 import (
 	"bufio"
 	"os"
@@ -8,8 +13,28 @@ import (
 	"unicode"
 	"strconv"
 	"strings"
+	"encoding/json"
 )
-// programma che legge nome del file da argomenti e scrive quello che legge da bufio
+
+type importantWords_type struct {
+	Types []string 
+	Keywords []string 
+} 
+var keywords importantWords_type
+
+type colors_type struct {
+	/*
+	"base": "\u001b[31m",
+    "reset": "\u001b[0m",
+    "keywords": "\u001b[34m",
+    "types": "\u001b[35m"
+	*/
+	Base string
+	Reset string
+	Keywords string
+	Types string
+}
+var colormap colors_type
 
 func JoinLinee(linee []string) string{
 	var sb strings.Builder
@@ -18,7 +43,6 @@ func JoinLinee(linee []string) string{
 	}
 	return sb.String()
 }
-
 func LeggiLinee(in io.Reader)  []string {
 	scanner := bufio.NewScanner(in)
 	var text_lines []string 
@@ -27,13 +51,11 @@ func LeggiLinee(in io.Reader)  []string {
 	}
 	return text_lines
 }
-
 func LeggiLinea(in io.Reader) string{
 	scanner := bufio.NewScanner(in)
 	scanner.Scan()
 	return  scanner.Text()
 }
-
 func IndiceRiga(num_righe int) int {
 	var inp_ind string
 
@@ -62,7 +84,6 @@ func IndiceRiga(num_righe int) int {
 		}
 	} 
 }
-
 func IsStringaNumero(s string) bool {
 	for _,v := range []rune(s) {
 		if !unicode.IsNumber(v){
@@ -71,16 +92,48 @@ func IsStringaNumero(s string) bool {
 	}
 	return true
 }
-
-
+func SliceContains(s []string, v string) bool {
+    for _, a := range s {
+        if a ==  v{
+            return true
+        }
+    }
+    return false
+}
 
 func PrintLines(lines []string){
 	// stampo riga per riga con l'indice a sinistra
 	for i:=0; i < len(lines); i++{
-		fmt.Print(i, "\t: ", lines[i] + "\n")
+		// per evidenziare le parole:
+		/*
+			separo ogni linea in tokens divisi dallo spazio
+			se il token corrente è incluso in una delle slice di keywords lo coloro con il colore adatto
+			altrimenti rimane con il colore standard
+		*/
+		fmt.Print(i	, "\t: ")
+		tokens := strings.Split(lines[i], " ")
+		for _,v := range tokens{
+			
+			switch{
+			case SliceContains(keywords.Keywords, v):
+				// stampo l'escape code per il colore delle keyword
+				fmt.Print(colormap.Keywords)
+			
+			case SliceContains(keywords.Types, v):
+				// stampo l'escape code per il colore delle keyword
+				fmt.Print(colormap.Types)
+			default:
+				fmt.Print(colormap.Base)
+			}
+			// stampo il token 
+			fmt.Print(v + " ")
+			// resetto il colore
+			fmt.Print(colormap.Reset)
+		}
+		// vado a capo
+		fmt.Println()
 	}
 }
-
 func ScriviSlice(writer *bufio.Writer, linee []string){
 	for _,v := range linee{
 		v += "\n"
@@ -88,7 +141,6 @@ func ScriviSlice(writer *bufio.Writer, linee []string){
 	}
 	writer.Flush()
 }
-
 func AggiungiLinea(linee []string, lineaDaAggiungere string, pos int) []string{
 	if len(linee) == pos{
 		return append(linee, lineaDaAggiungere)
@@ -101,7 +153,6 @@ func EliminaLinea(linee []string, pos int) []string{
 	linee = append(linee[:pos], linee[pos+1:]...)
 	return linee
 }
-
 func pulisciSchermo(){
 	fmt.Print("\033[H\033[2J")
 }
@@ -116,10 +167,43 @@ func main(){
 		return
 	}
 
+	// se il file ha un'estensione cerco nella cartella keywords per le keyword di quel linguaggio
+	// questo perchè almeno poi nella stampa posso evidenziarle
+	if strings.Index(file_name, ".") != -1{
+		// carica le keyword nella struttura dati dal file json corrispondente
+		keyword_path := "config/keywords/" + strings.Split(file_name,".")[1] +".json"
+		// SE il file esiste (i linguaggi possono anche non essere supportati)
+		// carico il json contenuto nel file in una struttura adeguata
+		// altrimenti metto in quella struttura nil -> così posso controllare nella stampa
+		_, err := os.Stat(keyword_path)
+		if err == nil{
+			// carico il file
+			f, err := os.Open(keyword_path)
+			if err == nil {
+				// carico tutto il file in una sola stringa
+				tmp_string := strings.Join(LeggiLinee(f), "")
+				err = json.Unmarshal([]byte(tmp_string), &keywords)
+			}
+			f.Close()
+		}
+	}
+	// carico i colori
+	var color_path string = "config/colors.json"
+	_, err := os.Stat(color_path)
+	if err == nil{
+		// carico il file
+		f, err := os.Open(color_path)
+		if err == nil {
+			// carico tutto il file in una sola stringa
+			tmp_string := strings.Join(LeggiLinee(f), "")
+			err = json.Unmarshal([]byte(tmp_string), &colormap)
+		}
+		f.Close()
+	}
 	
 	var lines []string
-	_, err := os.Stat(file_name)
-	if err != nil{
+	_, err = os.Stat(file_name)
+	if err == nil{
 		// il file esiste? se si leggo il contenuto altrimenti creo il file
 		f, err := os.OpenFile(file_name, os.O_RDONLY|os.O_CREATE, 0755)
 		if err != nil{
