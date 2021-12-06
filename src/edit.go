@@ -402,6 +402,8 @@ func main() {
 	}
 	// ora scrivo la slice nel file
 	ScriviSlice(bufio.NewWriter(f), lines)
+	// resetto il colore
+	fmt.Print("\033[0m")
 	// pulisco schermo
 	fmt.Print("\033[H\033[2J")
 }
