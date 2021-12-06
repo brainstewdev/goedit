@@ -7,101 +7,103 @@ supporta inoltre l'evidenziazione della sintassi (dove per ogni linguaggio deve 
 
 import (
 	"bufio"
-	"os"
+	"encoding/json"
 	"fmt"
 	"io"
-	"unicode"
+	"os"
 	"strconv"
 	"strings"
-	"encoding/json"
+	"unicode"
 )
 
 type importantWords_type struct {
-	Types []string 
-	Keywords []string 
-} 
+	Types    []string
+	Keywords []string
+}
+
 var keywords importantWords_type
 
 type colors_type struct {
 	/*
-	"base": "\u001b[31m",
-    "reset": "\u001b[0m",
-    "keywords": "\u001b[34m",
-    "types": "\u001b[35m"
+		"base": "\u001b[31m",
+	    "reset": "\u001b[0m",
+	    "keywords": "\u001b[34m",
+	    "types": "\u001b[35m"
 	*/
-	Base string
-	Reset string
-	Keywords string
-	Types string
-	Numbers string
+	Base            string
+	Reset           string
+	Keywords        string
+	Types           string
+	Numbers         string
+	StringsLiterals string
 }
+
 var colormap colors_type
 
-func JoinLinee(linee []string) string{
+func JoinLinee(linee []string) string {
 	var sb strings.Builder
-	for _,v := range linee {
+	for _, v := range linee {
 		sb.WriteString(v + "\n")
 	}
 	return sb.String()
 }
-func LeggiLinee(in io.Reader)  []string {
+func LeggiLinee(in io.Reader) []string {
 	scanner := bufio.NewScanner(in)
-	var text_lines []string 
-	for scanner.Scan(){
+	var text_lines []string
+	for scanner.Scan() {
 		text_lines = append(text_lines, scanner.Text())
 	}
 	return text_lines
 }
-func LeggiLinea(in io.Reader) string{
+func LeggiLinea(in io.Reader) string {
 	scanner := bufio.NewScanner(in)
 	scanner.Scan()
-	return  scanner.Text()
+	return scanner.Text()
 }
 func IndiceRiga(num_righe int) int {
 	var inp_ind string
 
-	
-	if num_righe == 0{
+	if num_righe == 0 {
 		return 0
 	}
-	
 
 	for {
 		fmt.Print(":")
-		fmt.Scan(&inp_ind);
+		fmt.Scan(&inp_ind)
 		// è composto tutto da cifre?
-		for _,v := range []rune(inp_ind) {
-			if !unicode.IsNumber(v){
+		for _, v := range []rune(inp_ind) {
+			if !unicode.IsNumber(v) {
 				continue
 			}
 		}
 		num, err := strconv.Atoi(inp_ind)
-		if err != nil{
+		if err != nil {
 			continue
-		}else{
-			if num >= 0 && num < num_righe  {
+		} else {
+			if num >= 0 && num < num_righe {
 				return num
 			}
 		}
-	} 
+	}
 }
 func IsStringaNumero(s string) bool {
-	for _,v := range []rune(s) {
-		if !unicode.IsNumber(v){
+	for _, v := range []rune(s) {
+		if !unicode.IsNumber(v) {
 			return false
 		}
 	}
 	return true
 }
 func IsStringaNumeroReale(s string) bool {
-	for _,v := range []rune(s) {
-		if !(unicode.IsNumber(v) || v == '.'){
+	for _, v := range []rune(s) {
+		if !(unicode.IsNumber(v) || v == '.') {
 			return false
 		}
 	}
 	return true
 }
-// funzione che restituisce se la stringa contiene un numero reale 
+
+// funzione che restituisce se la stringa contiene un numero reale
 /*
 	nel caso si abbia ad esempio in c++ un'assegnamento ad un numero reale si avrà il seguente caso:
 		int x = 10;
@@ -114,100 +116,133 @@ func IsStringaNumeroReale(s string) bool {
 */
 func TokenContainsValidNumber(s string) bool {
 	valid := true
-	for _,v := range []rune(s) {
-		if !(unicode.IsNumber(v) || v == '.' || v == ';'){
+	for _, v := range []rune(s) {
+		if !(unicode.IsNumber(v) || v == '.' || v == ';') {
 			valid = false
 		}
 	}
 	return valid
 }
 func SliceContains(s []string, v string) bool {
-    for _, a := range s {
-        if a ==  v{
-            return true
-        }
-    }
-    return false
+	for _, a := range s {
+		if a == v {
+			return true
+		}
+	}
+	return false
 }
 
-func PrintLines(lines []string){
+func PrintLines(lines []string) {
 	// stampo riga per riga con l'indice a sinistra
-	for i:=0; i < len(lines); i++{
+	for i := 0; i < len(lines); i++ {
 		// per evidenziare le parole:
 		/*
 			separo ogni linea in tokens divisi dallo spazio
 			se il token corrente è incluso in una delle slice di keywords lo coloro con il colore adatto
 			altrimenti rimane con il colore standard
 		*/
-		fmt.Print(i	, "\t: ")
+		// SE sono state aperte delle virgolette continuo a stampare con il colore delle stringhe letterali
+		// fino a quando incontro una parola che contiene delle virgolette
+		// nel testo fra virgolette NON ci deve essere evidenziazione sintattica
+		printing_string_literal := false
+		fmt.Print(i, "\t: ")
 		tokens := strings.Split(lines[i], " ")
-		for _,v := range tokens{
-			
-			switch{
-			case SliceContains(keywords.Keywords, v):
-				// stampo l'escape code per il colore delle keyword
-				fmt.Print(colormap.Keywords)
-			
-			case SliceContains(keywords.Types, v):
-				// stampo l'escape code per il colore delle keyword
-				fmt.Print(colormap.Types)
-			case TokenContainsValidNumber(v):
-				fmt.Print(colormap.Numbers)
-			default:
-				fmt.Print(colormap.Base)
+		for _, v := range tokens {
+			// controllo, se il token corrente contiene un " allora devo stampare la parte fino a quello e poi metto printing_string_literal a vero
+			disable_print := false
+			if indice_start := strings.Index(v, "\""); indice_start != -1 {
+				if !printing_string_literal {
+					printing_string_literal = true
+					// quello che avviene quando becco la prima virgoletta
+					// stampo quello che c'è prima delle virgolette
+					fmt.Print(v[:indice_start])
+					// stampo quello che c'è dopo
+					fmt.Print(colormap.StringsLiterals)
+					fmt.Print((v[indice_start:]))
+					fmt.Print(" ")
+					disable_print = true
+					}else{
+						printing_string_literal = false
+						fmt.Print(v[:indice_start+1])
+						// resetta il colore e mette printing_string_literal a false
+						fmt.Print(colormap.Reset)
+						fmt.Print((v[indice_start+1:]))
+						disable_print = true
+						fmt.Print(" ")
+				}
 			}
-			// stampo il token 
+
+			if !printing_string_literal {
+				switch {
+				case SliceContains(keywords.Keywords, v):
+					// stampo l'escape code per il colore delle keyword
+					fmt.Print(colormap.Keywords)
+
+				case SliceContains(keywords.Types, v):
+					// stampo l'escape code per il colore delle keyword
+					fmt.Print(colormap.Types)
+				case TokenContainsValidNumber(v):
+					fmt.Print(colormap.Numbers)
+				default:
+					fmt.Print(colormap.Base)
+				}
+			}
+			// stampo il token
+			if !disable_print{
 			fmt.Print(v + " ")
+			}
 			// resetto il colore
-			fmt.Print(colormap.Reset)
+			if !printing_string_literal {
+				fmt.Print(colormap.Reset)
+			}
 		}
 		// vado a capo
 		fmt.Println()
 	}
 }
-func ScriviSlice(writer *bufio.Writer, linee []string){
-	for _,v := range linee{
+func ScriviSlice(writer *bufio.Writer, linee []string) {
+	for _, v := range linee {
 		v += "\n"
 		fmt.Fprint(writer, v)
 	}
 	writer.Flush()
 }
-func AggiungiLinea(linee []string, lineaDaAggiungere string, pos int) []string{
-	if len(linee) == pos{
+func AggiungiLinea(linee []string, lineaDaAggiungere string, pos int) []string {
+	if len(linee) == pos {
 		return append(linee, lineaDaAggiungere)
 	}
 	linee = append(linee[:pos+1], linee[pos:]...)
 	linee[pos] = lineaDaAggiungere
 	return linee
 }
-func EliminaLinea(linee []string, pos int) []string{
+func EliminaLinea(linee []string, pos int) []string {
 	linee = append(linee[:pos], linee[pos+1:]...)
 	return linee
 }
-func pulisciSchermo(){
+func pulisciSchermo() {
 	fmt.Print("\033[H\033[2J")
 }
 
-func main(){
+func main() {
 	// prendi nome file da argomenti
 	var file_name string
-	if len(os.Args) > 1{
+	if len(os.Args) > 1 {
 		file_name = os.Args[1]
-	}else{
+	} else {
 		fmt.Println("Usage: edit filename")
 		return
 	}
 
 	// se il file ha un'estensione cerco nella cartella keywords per le keyword di quel linguaggio
 	// questo perchè almeno poi nella stampa posso evidenziarle
-	if strings.Index(file_name, ".") != -1{
+	if strings.Index(file_name, ".") != -1 {
 		// carica le keyword nella struttura dati dal file json corrispondente
-		keyword_path := "config"+ string(os.PathSeparator) + "keywords" + string(os.PathSeparator) + strings.Split(file_name,".")[1] +".json"
+		keyword_path := "config" + string(os.PathSeparator) + "keywords" + string(os.PathSeparator) + strings.Split(file_name, ".")[1] + ".json"
 		// SE il file esiste (i linguaggi possono anche non essere supportati)
 		// carico il json contenuto nel file in una struttura adeguata
 		// altrimenti metto in quella struttura nil -> così posso controllare nella stampa
 		_, err := os.Stat(keyword_path)
-		if err == nil{
+		if err == nil {
 			// carico il file
 			f, err := os.Open(keyword_path)
 			if err == nil {
@@ -221,7 +256,7 @@ func main(){
 	// carico i colori
 	var color_path string = "config" + string(os.PathSeparator) + "colors.json"
 	_, err := os.Stat(color_path)
-	if err == nil{
+	if err == nil {
 		// carico il file
 		f, err := os.Open(color_path)
 		if err == nil {
@@ -231,19 +266,19 @@ func main(){
 		}
 		f.Close()
 	}
-	
+
 	var lines []string
 	_, err = os.Stat(file_name)
-	if err == nil{
+	if err == nil {
 		// il file esiste? se si leggo il contenuto altrimenti creo il file
 		f, err := os.OpenFile(file_name, os.O_RDONLY|os.O_CREATE, 0755)
-		if err != nil{
+		if err != nil {
 			fmt.Println("Error opening / creating file:", err)
 		}
-		// ora il file è creato / stato aperto 
+		// ora il file è creato / stato aperto
 
 		lines = LeggiLinee(f)
-		
+
 		f.Close()
 	}
 	// ora ho letto tutte le linee
@@ -255,55 +290,56 @@ func main(){
 		PrintLines(lines)
 		// prendo il comando in input
 		/*
-			comandi disponibili: 
-				i x n -> con n e x numero 
+			comandi disponibili:
+				i x n -> con n e x numero
 					inserisce n linee vuote dopo la posizione x
 		*/
 		// prendo in input l'indice della riga che voglio modificare
 		var com string
 		fmt.Print(":")
 		com = LeggiLinea(os.Stdin)
+		if com != ""{
 		switch {
 		case []rune(com)[0] == 'b':
 			// devo controllare che vi siano x e n
 			cmd_args := strings.Split(com, " ")
-			if len(cmd_args) == 3 && IsStringaNumero(cmd_args[1]) && IsStringaNumero(cmd_args[2]){
+			if len(cmd_args) == 3 && IsStringaNumero(cmd_args[1]) && IsStringaNumero(cmd_args[2]) {
 				// prendo i numeri come interi per comodità
 				var x, n int
 				x, _ = strconv.Atoi(cmd_args[1])
-				n, _= strconv.Atoi(cmd_args[2])
+				n, _ = strconv.Atoi(cmd_args[2])
 				// eseguo il comando
-				for i:= 0; i < n; i++{
+				for i := 0; i < n; i++ {
 					lines = AggiungiLinea(lines, " ", x)
 				}
 			}
 		case []rune(com)[0] == 'i':
 			// devo controllare che vi siano x e n
 			cmd_args := strings.Split(com, " ")
-			
+
 			// tutto cioò che viene messo dopo il secondo spazio viene preso come testo da inserire
-			if len(cmd_args) >= 3 && IsStringaNumero(cmd_args[1]){
-				
+			if len(cmd_args) >= 3 && IsStringaNumero(cmd_args[1]) {
+
 				// prendo posizione come stringa e il testo da inserire nella posizione come stringa
 				stringa_da_inserire := strings.Join(strings.Split(com, " ")[2:], " ")
 				i, _ := strconv.Atoi(cmd_args[1])
 				fmt.Println(len(lines)-1, " i:", i)
 				// se la riga selezionata non è inclusa nella lunghezza corrente allora inserisco righe bianche fino a quando lo è
-				if i > len(lines){
+				if i > len(lines) {
 					lun := len(lines)
-					for j := 0; j < lun; j++{
+					for j := 0; j < lun; j++ {
 						lines = AggiungiLinea(lines, " ", len(lines)-1)
 					}
 				}
 				// eseguo il comando
 				lines = AggiungiLinea(lines, stringa_da_inserire, i)
-				
+
 			}
 		case []rune(com)[0] == 'e':
 			// devo controllare che vi siano x e n
 			cmd_args := strings.Split(com, " ")
 			// tutto cioò che viene messo dopo il secondo spazio viene preso come testo da inserire
-			if len(cmd_args) >= 3 && IsStringaNumero(cmd_args[1]){
+			if len(cmd_args) >= 3 && IsStringaNumero(cmd_args[1]) {
 				// prendo posizione come stringa e il testo da inserire nella posizione come stringa
 				stringa_da_inserire := strings.Join(strings.Split(com, " ")[2:], " ")
 				i, _ := strconv.Atoi(cmd_args[1])
@@ -315,21 +351,21 @@ func main(){
 		case []rune(com)[0] == 'D':
 			// elimina la riga nell'indice cmd_args[1]
 			cmd_args := strings.Split(com, " ")
-			if len(cmd_args) == 2 && IsStringaNumero(cmd_args[1]){
+			if len(cmd_args) == 2 && IsStringaNumero(cmd_args[1]) {
 				i, _ := strconv.Atoi(cmd_args[1])
 				lines = EliminaLinea(lines, i)
 			}
 		case []rune(com)[0] == 'd':
 			// mette una riga vuota alla posizione cmd_args[1]
 			cmd_args := strings.Split(com, " ")
-			if len(cmd_args) == 2 && IsStringaNumero(cmd_args[1]){
+			if len(cmd_args) == 2 && IsStringaNumero(cmd_args[1]) {
 				i, _ := strconv.Atoi(cmd_args[1])
 				lines[i] = " "
 			}
-		
+
 		case []rune(com)[0] == 'q':
 			quit = true
-			
+		}
 		}
 		fmt.Println(lines)
 		// fmt.Println("Insert the new value for line", indice, ":")
@@ -344,11 +380,11 @@ func main(){
 
 	// riapro file in scrittura stavolta
 	f, err := os.OpenFile(file_name, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0755)
-	if err != nil{
+	if err != nil {
 		fmt.Println("Error opening / creating file:", err)
 	}
 	// ora scrivo la slice nel file
 	ScriviSlice(bufio.NewWriter(f), lines)
 	// pulisco schermo
-	fmt.Print("\033[H\033[2J")	
+	fmt.Print("\033[H\033[2J")
 }
