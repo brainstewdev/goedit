@@ -145,12 +145,19 @@ func PrintLines(lines []string) {
 		// fino a quando incontro una parola che contiene delle virgolette
 		// nel testo fra virgolette NON ci deve essere evidenziazione sintattica
 		printing_string_literal := false
+		fmt.Print(colormap.Reset)
 		fmt.Print(i, "\t: ")
+		fmt.Print(colormap.Base)
 		tokens := strings.Split(lines[i], " ")
 		for _, v := range tokens {
 			// controllo, se il token corrente contiene un " allora devo stampare la parte fino a quello e poi metto printing_string_literal a vero
 			disable_print := false
 			if indice_start := strings.Index(v, "\""); indice_start != -1 {
+				// controllo se è un token che inizia e finisce con le virgolette 
+				if ([]rune(v))[0] == ([]rune(v))[len([]rune(v))-1] &&  string(([]rune(v))[0]) == "\""{
+					fmt.Print(colormap.StringsLiterals, v, colormap.Reset)
+					disable_print = true
+				} else{
 				if !printing_string_literal {
 					printing_string_literal = true
 					// quello che avviene quando becco la prima virgoletta
@@ -169,6 +176,7 @@ func PrintLines(lines []string) {
 						fmt.Print((v[indice_start+1:]))
 						disable_print = true
 						fmt.Print(" ")
+				}
 				}
 			}
 
