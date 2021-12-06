@@ -33,6 +33,7 @@ type colors_type struct {
 	Reset string
 	Keywords string
 	Types string
+	Numbers string
 }
 var colormap colors_type
 
@@ -92,6 +93,34 @@ func IsStringaNumero(s string) bool {
 	}
 	return true
 }
+func IsStringaNumeroReale(s string) bool {
+	for _,v := range []rune(s) {
+		if !(unicode.IsNumber(v) || v == '.'){
+			return false
+		}
+	}
+	return true
+}
+// funzione che restituisce se la stringa contiene un numero reale 
+/*
+	nel caso si abbia ad esempio in c++ un'assegnamento ad un numero reale si avrà il seguente caso:
+		int x = 10;
+	e 10 non sarà considerato numero reale quindi non evidenziato
+	devo creare una funzione che prenda e controlli se prima di tutto la stringa contiene un numero reale
+	poi devo ciclare nella stampa e utilizzare il color code giusto per stampare i singoli caratteri del numero
+	poi arrivato ad un carattere che non è un numero allora mi fermo
+	se vi è un numero attaccato (nello stesso token) ad un punto e virgola allora è valido
+	in tutti gli altri casi no -> non evidenziare quindi restituisco falso
+*/
+func TokenContainsValidNumber(s string) bool {
+	valid := true
+	for _,v := range []rune(s) {
+		if !(unicode.IsNumber(v) || v == '.' || v == ';'){
+			valid = false
+		}
+	}
+	return valid
+}
 func SliceContains(s []string, v string) bool {
     for _, a := range s {
         if a ==  v{
@@ -122,6 +151,8 @@ func PrintLines(lines []string){
 			case SliceContains(keywords.Types, v):
 				// stampo l'escape code per il colore delle keyword
 				fmt.Print(colormap.Types)
+			case TokenContainsValidNumber(v):
+				fmt.Print(colormap.Numbers)
 			default:
 				fmt.Print(colormap.Base)
 			}
