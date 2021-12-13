@@ -127,9 +127,18 @@ func SliceContains(s []string, v string) bool {
 	}
 	return false
 }
-
+// funzione che imposta il colore da stampare per l'output
+func SetColor(rgb string, background bool) {
+	//ESC[ 38;2;⟨r⟩;⟨g⟩;⟨b⟩ m Select RGB foreground color
+	escape := "\033"
+	if !background{
+		fmt.Print(escape + "[38;2;" + rgb+"m")
+	}else{
+		fmt.Print(escape + "[48;2;" + rgb + "m")
+	}
+}
 func PrintLines(lines []string) {
-	
+		SetColor(colorschemes[cur_scheme].Background, true)
 	// stampo riga per riga con l'indice a sinistra
 	for i := 0; i < len(lines); i++ {
 		// per evidenziare le parole:
@@ -142,10 +151,8 @@ func PrintLines(lines []string) {
 		// fino a quando incontro una parola che contiene delle virgolette
 		// nel testo fra virgolette NON ci deve essere evidenziazione sintattica
 		printing_string_literal := false
-		fmt.Print(colorschemes[cur_scheme].Reset)
-		fmt.Print(colorschemes[cur_scheme].Background)
 		fmt.Print(i, "\t: ")
-		fmt.Print(colorschemes[cur_scheme].Base)
+		SetColor(colorschemes[cur_scheme].Base, false)
 		tokens := strings.Split(lines[i], " ")
 		for _, v := range tokens {
 			// controllo, se il token corrente contiene un " allora devo stampare la parte fino a quello e poi metto printing_string_literal a vero
@@ -153,7 +160,8 @@ func PrintLines(lines []string) {
 			if indice_start := strings.Index(v, "\""); indice_start != -1 {
 				// controllo se è un token che inizia e finisce con le virgolette 
 				if ([]rune(v))[0] == ([]rune(v))[len([]rune(v))-1] &&  string(([]rune(v))[0]) == "\""{
-					fmt.Print(colorschemes[cur_scheme].StringsLiterals, v, colorschemes[cur_scheme].Reset)
+					SetColor(colorschemes[cur_scheme].StringsLiterals, false)
+					SetColor(colorschemes[cur_scheme].Reset, false)
 					disable_print = true
 				} else{
 				if !printing_string_literal {
@@ -162,7 +170,7 @@ func PrintLines(lines []string) {
 					// stampo quello che c'è prima delle virgolette
 					fmt.Print(v[:indice_start])
 					// stampo quello che c'è dopo
-					fmt.Print(colorschemes[cur_scheme].StringsLiterals)
+					SetColor(colorschemes[cur_scheme].StringsLiterals, false)
 					fmt.Print((v[indice_start:]))
 					fmt.Print(" ")
 					disable_print = true
@@ -170,7 +178,7 @@ func PrintLines(lines []string) {
 						printing_string_literal = false
 						fmt.Print(v[:indice_start+1])
 						// resetta il colore e mette printing_string_literal a false
-						fmt.Print(colorschemes[cur_scheme].Reset)
+						SetColor(colorschemes[cur_scheme].Reset, false)
 						fmt.Print((v[indice_start+1:]))
 						disable_print = true
 						fmt.Print(" ")
@@ -181,16 +189,14 @@ func PrintLines(lines []string) {
 			if !printing_string_literal {
 				switch {
 				case SliceContains(keywords.Keywords, v):
-					// stampo l'escape code per il colore delle keyword
-					fmt.Print(colorschemes[cur_scheme].Keywords)
+					SetColor(colorschemes[cur_scheme].Keywords, false)
 
 				case SliceContains(keywords.Types, v):
-					// stampo l'escape code per il colore delle keyword
-					fmt.Print(colorschemes[cur_scheme].Types)
+					SetColor(colorschemes[cur_scheme].Types, false)
 				case TokenContainsValidNumber(v):
-					fmt.Print(colorschemes[cur_scheme].Numbers)
+					SetColor(colorschemes[cur_scheme].Numbers, false)
 				default:
-					fmt.Print(colorschemes[cur_scheme].Base)
+					SetColor(colorschemes[cur_scheme].Base, false)
 				}
 			}
 			// stampo il token
@@ -199,7 +205,7 @@ func PrintLines(lines []string) {
 			}
 			// resetto il colore
 			if !printing_string_literal {
-				fmt.Print(colorschemes[cur_scheme].Reset)
+				SetColor(colorschemes[cur_scheme].Reset, false)
 			}
 			fmt.Print(" ")
 		}
@@ -384,7 +390,6 @@ func main() {
 		
 		}
 		}
-		fmt.Println(lines)
 		// fmt.Println("Insert the new value for line", indice, ":")
 		// ora ho all'interno di indice la riga voluta:
 		// leggo da input del testo (con la funz LeggiTesto)
