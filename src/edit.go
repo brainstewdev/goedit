@@ -161,6 +161,7 @@ func PrintLines(lines []string) {
 				// controllo se è un token che inizia e finisce con le virgolette 
 				if ([]rune(v))[0] == ([]rune(v))[len([]rune(v))-1] &&  string(([]rune(v))[0]) == "\""{
 					SetColor(colorschemes[cur_scheme].StringsLiterals, false)
+					fmt.Print(v)
 					SetColor(colorschemes[cur_scheme].Reset, false)
 					disable_print = true
 				} else{
