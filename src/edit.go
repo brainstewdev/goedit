@@ -65,7 +65,6 @@ func main() {
 		}
 		f.Close()
 	}
-	fmt.Println("mappa dei colori:" ,  colorschemes)
 	var lines []string
 	_, err = os.Stat(file_name)
 	if err == nil {
@@ -85,6 +84,7 @@ func main() {
 	// CICLO OPERAZIONI PARTE DA QUA
 	for !quit {
 		// pulisco lo schermo e scrivo a schermo tutte le linee
+		PrintLines(lines)
 		pulisciSchermo()
 		PrintLines(lines)
 		// prendo il comando in input
@@ -175,7 +175,6 @@ func main() {
 		
 		}
 		}
-		fmt.Println(lines)
 		// fmt.Println("Insert the new value for line", indice, ":")
 		// ora ho all'interno di indice la riga voluta:
 		// leggo da input del testo (con la funz LeggiTesto)
