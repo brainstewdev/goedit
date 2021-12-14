@@ -11,13 +11,13 @@
         },
         "80s": 
         {
-            "background": "[48;5;0m",
-            "base": "[38;5;200m",
-            "reset": "[38;5;68m",
-            "keywords": "[38;5;132m",
-            "types": "[38;5;209m",
-            "numbers": "[38;5;124m",
-            "stringsLiterals": "[38;5;211m"
+            "background": "23;5;52",
+            "base": "185;175;26",
+            "reset": "185;175;26",
+            "keywords": "213;36;116",
+            "types": "251;183;140",
+            "numbers": "64;8;121",
+            "stringsLiterals": "65;13;129"
         }
     
 }
