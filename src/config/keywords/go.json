@@ -17,7 +17,8 @@
         "uint16",
         "uint32",
         "uint64",
-        "uintptrq"
+        "uintptrq",
+        "string"
     ],
     "keywords":
     [
