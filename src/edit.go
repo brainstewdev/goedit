@@ -9,16 +9,14 @@ import (
 	"bufio"
 	"encoding/json"
 	"fmt"
-	"io"
 	"os"
 	"strconv"
 	"strings"
-	"unicode"
 	"github.com/brainstew927/goedit/utility"
 )
 
-var keywords importantWords_type
-var colorschemes map[string]scheme_type
+var keywords utility.ImportantWordsType
+var colorschemes map[string]utility.SchemeType
 var cur_scheme string
 
 func main() {
@@ -46,12 +44,14 @@ func main() {
 			f, err := os.Open(keyword_path)
 			if err == nil {
 				// carico tutto il file in una sola stringa
-				tmp_string := strings.Join(LeggiLinee(f), "")
+				tmp_string := strings.Join(utility.ReadLines(f), "")
 				err = json.Unmarshal([]byte(tmp_string), &keywords)
 			}
 			f.Close()
 		}
 	}
+	// carico le keywords nella struttura in utility
+	utility.SetWords(keywords)
 	// carico i colori
 	var color_path string = "config" + string(os.PathSeparator) + "colors.json"
 	_, err := os.Stat(color_path)
@@ -60,7 +60,7 @@ func main() {
 		f, err := os.Open(color_path)
 		if err == nil {
 			// carico tutto il file in una sola stringa
-			tmp_string := strings.Join(LeggiLinee(f), "")
+			tmp_string := strings.Join(utility.ReadLines(f), "")
 			err = json.Unmarshal([]byte(tmp_string), &colorschemes)
 		}
 		f.Close()
@@ -75,7 +75,7 @@ func main() {
 		}
 		// ora il file è creato / stato aperto
 
-		lines = LeggiLinee(f)
+		lines = utility.ReadLines(f)
 
 		f.Close()
 	}
@@ -84,9 +84,9 @@ func main() {
 	// CICLO OPERAZIONI PARTE DA QUA
 	for !quit {
 		// pulisco lo schermo e scrivo a schermo tutte le linee
-		PrintLines(lines)
-		pulisciSchermo()
-		PrintLines(lines)
+		utility.PrintLines(lines)
+		utility.ClearScreen()
+		utility.PrintLines(lines)
 		// prendo il comando in input
 		/*
 			comandi disponibili:
@@ -96,20 +96,20 @@ func main() {
 		// prendo in input l'indice della riga che voglio modificare
 		var com string
 		fmt.Print(":")
-		com = LeggiLinea(os.Stdin)
+		com = utility.ReadLine(os.Stdin)
 		if com != ""{
 		switch {
 		case []rune(com)[0] == 'b':
 			// devo controllare che vi siano x e n
 			cmd_args := strings.Split(com, " ")
-			if len(cmd_args) == 3 && IsStringaNumero(cmd_args[1]) && IsStringaNumero(cmd_args[2]) {
+			if len(cmd_args) == 3 && utility.IsStringNumber(cmd_args[1]) && utility.IsStringNumber(cmd_args[2]) {
 				// prendo i numeri come interi per comodità
 				var x, n int
 				x, _ = strconv.Atoi(cmd_args[1])
 				n, _ = strconv.Atoi(cmd_args[2])
 				// eseguo il comando
 				for i := 0; i < n; i++ {
-					lines = AggiungiLinea(lines, " ", x)
+					lines = utility.AddLine(lines, " ", x)
 				}
 			}
 		case []rune(com)[0] == 'i':
@@ -117,7 +117,7 @@ func main() {
 			cmd_args := strings.Split(com, " ")
 
 			// tutto cioò che viene messo dopo il secondo spazio viene preso come testo da inserire
-			if len(cmd_args) >= 3 && IsStringaNumero(cmd_args[1]) {
+			if len(cmd_args) >= 3 && utility.IsStringNumber(cmd_args[1]) {
 
 				// prendo posizione come stringa e il testo da inserire nella posizione come stringa
 				stringa_da_inserire := strings.Join(strings.Split(com, " ")[2:], " ")
@@ -127,18 +127,18 @@ func main() {
 				if i > len(lines) {
 					lun := len(lines)
 					for j := 0; j < lun; j++ {
-						lines = AggiungiLinea(lines, " ", len(lines)-1)
+						lines = utility.AddLine(lines, " ", len(lines)-1)
 					}
 				}
 				// eseguo il comando
-				lines = AggiungiLinea(lines, stringa_da_inserire, i)
+				lines = utility.AddLine(lines, stringa_da_inserire, i)
 
 			}
 		case []rune(com)[0] == 'e':
 			// devo controllare che vi siano x e n
 			cmd_args := strings.Split(com, " ")
 			// tutto cioò che viene messo dopo il secondo spazio viene preso come testo da inserire
-			if len(cmd_args) >= 3 && IsStringaNumero(cmd_args[1]) {
+			if len(cmd_args) >= 3 && utility.IsStringNumber(cmd_args[1]) {
 				// prendo posizione come stringa e il testo da inserire nella posizione come stringa
 				stringa_da_inserire := strings.Join(strings.Split(com, " ")[2:], " ")
 				i, _ := strconv.Atoi(cmd_args[1])
@@ -150,14 +150,14 @@ func main() {
 		case []rune(com)[0] == 'D':
 			// elimina la riga nell'indice cmd_args[1]
 			cmd_args := strings.Split(com, " ")
-			if len(cmd_args) == 2 && IsStringaNumero(cmd_args[1]) {
+			if len(cmd_args) == 2 && utility.IsStringNumber(cmd_args[1]) {
 				i, _ := strconv.Atoi(cmd_args[1])
-				lines = EliminaLinea(lines, i)
+				lines = utility.RemoveLine(lines, i)
 			}
 		case []rune(com)[0] == 'd':
 			// mette una riga vuota alla posizione cmd_args[1]
 			cmd_args := strings.Split(com, " ")
-			if len(cmd_args) == 2 && IsStringaNumero(cmd_args[1]) {
+			if len(cmd_args) == 2 && utility.IsStringNumber(cmd_args[1]) {
 				i, _ := strconv.Atoi(cmd_args[1])
 				lines[i] = " "
 			}
@@ -168,6 +168,8 @@ func main() {
 				_, ok := colorschemes[cmd_args[1]]
 				if ok {
 					cur_scheme = cmd_args[1]
+					// set the scheme in the utility function 
+					utility.SetScheme(colorschemes[cur_scheme])
 				}
 			}
 		case []rune(com)[0] == 'q':
@@ -180,7 +182,7 @@ func main() {
 		// leggo da input del testo (con la funz LeggiTesto)
 		// e lo metto all'interno dell'elemento di indice indice della slice
 
-		// stringa_input := JoinLinee(LeggiLinee(os.Stdin))
+		// stringa_input := JoinLinee(utility.ReadLines(os.Stdin))
 		// lines[indice] = stringa_input
 	}
 	// CICLO OPERAZIONI FINISCE QUA
@@ -191,7 +193,7 @@ func main() {
 		fmt.Println("Error opening / creating file:", err)
 	}
 	// ora scrivo la slice nel file
-	ScriviSlice(bufio.NewWriter(f), lines)
+	utility.WriteSlice(bufio.NewWriter(f), lines)
 	// resetto il colore
 	fmt.Print("\033[0m")
 	// pulisco schermo

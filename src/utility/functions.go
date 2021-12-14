@@ -1,15 +1,25 @@
 package utility
 
-import "fmt"
+import (
+	"fmt"
+	"strings"
+	"unicode"
+	"bufio"
+	"io"
+	"strconv"
+)
 
-func JoinLinee(linee []string) string {
+var currentScheme SchemeType
+var keywords ImportantWordsType
+
+func JoinLines(linee []string) string {
 	var sb strings.Builder
 	for _, v := range linee {
 		sb.WriteString(v + "\n")
 	}
 	return sb.String()
 }
-func LeggiLinee(in io.Reader) []string {
+func ReadLines(in io.Reader) []string {
 	scanner := bufio.NewScanner(in)
 	var text_lines []string
 	for scanner.Scan() {
@@ -17,12 +27,12 @@ func LeggiLinee(in io.Reader) []string {
 	}
 	return text_lines
 }
-func LeggiLinea(in io.Reader) string {
+func ReadLine(in io.Reader) string {
 	scanner := bufio.NewScanner(in)
 	scanner.Scan()
 	return scanner.Text()
 }
-func IndiceRiga(num_righe int) int {
+func RowIndex(num_righe int) int {
 	var inp_ind string
 
 	if num_righe == 0 {
@@ -48,7 +58,7 @@ func IndiceRiga(num_righe int) int {
 		}
 	}
 }
-func IsStringaNumero(s string) bool {
+func IsStringNumber(s string) bool {
 	for _, v := range []rune(s) {
 		if !unicode.IsNumber(v) {
 			return false
@@ -56,7 +66,7 @@ func IsStringaNumero(s string) bool {
 	}
 	return true
 }
-func IsStringaNumeroReale(s string) bool {
+func IsStringaRealNumber(s string) bool {
 	for _, v := range []rune(s) {
 		if !(unicode.IsNumber(v) || v == '.') {
 			return false
@@ -94,6 +104,13 @@ func SliceContains(s []string, v string) bool {
 	return false
 }
 
+func SetScheme(newScheme SchemeType){
+	currentScheme = newScheme
+}
+func SetWords(wordSet ImportantWordsType){
+	keywords = wordSet
+}
+
 func PrintLines(lines []string) {
 	
 	// stampo riga per riga con l'indice a sinistra
@@ -108,10 +125,10 @@ func PrintLines(lines []string) {
 		// fino a quando incontro una parola che contiene delle virgolette
 		// nel testo fra virgolette NON ci deve essere evidenziazione sintattica
 		printing_string_literal := false
-		fmt.Print(colorschemes[cur_scheme].Reset)
-		fmt.Print(colorschemes[cur_scheme].Background)
+		fmt.Print(currentScheme.Reset)
+		fmt.Print(currentScheme.Background)
 		fmt.Print(i, "\t: ")
-		fmt.Print(colorschemes[cur_scheme].Base)
+		fmt.Print(currentScheme.Base)
 		tokens := strings.Split(lines[i], " ")
 		for _, v := range tokens {
 			// controllo, se il token corrente contiene un " allora devo stampare la parte fino a quello e poi metto printing_string_literal a vero
@@ -119,7 +136,7 @@ func PrintLines(lines []string) {
 			if indice_start := strings.Index(v, "\""); indice_start != -1 {
 				// controllo se è un token che inizia e finisce con le virgolette 
 				if ([]rune(v))[0] == ([]rune(v))[len([]rune(v))-1] &&  string(([]rune(v))[0]) == "\""{
-					fmt.Print(colorschemes[cur_scheme].StringsLiterals, v, colorschemes[cur_scheme].Reset)
+					fmt.Print(currentScheme.StringsLiterals, v, currentScheme.Reset)
 					disable_print = true
 				} else{
 				if !printing_string_literal {
@@ -128,7 +145,7 @@ func PrintLines(lines []string) {
 					// stampo quello che c'è prima delle virgolette
 					fmt.Print(v[:indice_start])
 					// stampo quello che c'è dopo
-					fmt.Print(colorschemes[cur_scheme].StringsLiterals)
+					fmt.Print(currentScheme.StringsLiterals)
 					fmt.Print((v[indice_start:]))
 					fmt.Print(" ")
 					disable_print = true
@@ -136,7 +153,7 @@ func PrintLines(lines []string) {
 						printing_string_literal = false
 						fmt.Print(v[:indice_start+1])
 						// resetta il colore e mette printing_string_literal a false
-						fmt.Print(colorschemes[cur_scheme].Reset)
+						fmt.Print(currentScheme.Reset)
 						fmt.Print((v[indice_start+1:]))
 						disable_print = true
 						fmt.Print(" ")
@@ -148,15 +165,15 @@ func PrintLines(lines []string) {
 				switch {
 				case SliceContains(keywords.Keywords, v):
 					// stampo l'escape code per il colore delle keyword
-					fmt.Print(colorschemes[cur_scheme].Keywords)
+					fmt.Print(currentScheme.Keywords)
 
 				case SliceContains(keywords.Types, v):
 					// stampo l'escape code per il colore delle keyword
-					fmt.Print(colorschemes[cur_scheme].Types)
+					fmt.Print(currentScheme.Types)
 				case TokenContainsValidNumber(v):
-					fmt.Print(colorschemes[cur_scheme].Numbers)
+					fmt.Print(currentScheme.Numbers)
 				default:
-					fmt.Print(colorschemes[cur_scheme].Base)
+					fmt.Print(currentScheme.Base)
 				}
 			}
 			// stampo il token
@@ -165,7 +182,7 @@ func PrintLines(lines []string) {
 			}
 			// resetto il colore
 			if !printing_string_literal {
-				fmt.Print(colorschemes[cur_scheme].Reset)
+				fmt.Print(currentScheme.Reset)
 			}
 			fmt.Print(" ")
 		}
@@ -173,14 +190,14 @@ func PrintLines(lines []string) {
 		fmt.Println()
 	}
 }
-func ScriviSlice(writer *bufio.Writer, linee []string) {
+func WriteSlice(writer *bufio.Writer, linee []string) {
 	for _, v := range linee {
 		v += "\n"
 		fmt.Fprint(writer, v)
 	}
 	writer.Flush()
 }
-func AggiungiLinea(linee []string, lineaDaAggiungere string, pos int) []string {
+func AddLine(linee []string, lineaDaAggiungere string, pos int) []string {
 	if len(linee) == pos {
 		return append(linee, lineaDaAggiungere)
 	}
@@ -188,10 +205,10 @@ func AggiungiLinea(linee []string, lineaDaAggiungere string, pos int) []string {
 	linee[pos] = lineaDaAggiungere
 	return linee
 }
-func EliminaLinea(linee []string, pos int) []string {
+func RemoveLine(linee []string, pos int) []string {
 	linee = append(linee[:pos], linee[pos+1:]...)
 	return linee
 }
-func pulisciSchermo() {
+func ClearScreen() {
 	fmt.Print("\033[H\033[2J")
 }

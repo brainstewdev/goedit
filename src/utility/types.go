@@ -1,10 +1,10 @@
 package utility
 
-type importantWords_type struct {
+type ImportantWordsType struct {
 	Types    []string
 	Keywords []string
 }
-type scheme_type struct {
+type SchemeType struct {
 	Background		string
 	Base            string
 	Reset           string
