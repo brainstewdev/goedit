@@ -29,7 +29,7 @@ func main() {
 			return
 	}
 		
-	cur_scheme = "standard"
+	
 	// se il file ha un'estensione cerco nella cartella keywords per le keyword di quel linguaggio
 	// questo perchè almeno poi nella stampa posso evidenziarle
 	if strings.Index(file_name, ".") != -1 {
@@ -54,6 +54,8 @@ func main() {
 	utility.SetWords(keywords)
 	// carico i colori
 	var color_path string = "config" + string(os.PathSeparator) + "colors.json"
+	// schema di colori da usare di default
+	cur_scheme = "standard"
 	_, err := os.Stat(color_path)
 	if err == nil {
 		// carico il file
@@ -65,6 +67,8 @@ func main() {
 		}
 		f.Close()
 	}
+	// carico i colori per la stampa per inizializzare il tema
+	utility.SetScheme(colorschemes[cur_scheme])
 	var lines []string
 	_, err = os.Stat(file_name)
 	if err == nil {
