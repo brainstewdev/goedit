@@ -138,7 +138,7 @@ func SetColor(rgb string, background bool) {
 	}
 }
 func PrintLines(lines []string) {
-		SetColor(colorschemes[cur_scheme].Background, true)
+	SetColor(colorschemes[cur_scheme].Background, true)
 	// stampo riga per riga con l'indice a sinistra
 	for i := 0; i < len(lines); i++ {
 		// per evidenziare le parole:
@@ -281,7 +281,6 @@ func main() {
 		}
 		f.Close()
 	}
-	fmt.Println("mappa dei colori:" ,  colorschemes)
 	var lines []string
 	_, err = os.Stat(file_name)
 	if err == nil {
@@ -301,6 +300,7 @@ func main() {
 	// CICLO OPERAZIONI PARTE DA QUA
 	for !quit {
 		// pulisco lo schermo e scrivo a schermo tutte le linee
+		PrintLines(lines)
 		pulisciSchermo()
 		PrintLines(lines)
 		// prendo il comando in input
