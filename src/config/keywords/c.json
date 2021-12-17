@@ -1,0 +1,16 @@
+{
+	"types": [
+		"int", "float", "double", "char", "float", "short", "long", "void"
+	],
+	"keywords": [
+
+		"auto", "struct",
+		"break", "else", "switch",
+		"case", "enum", "register", "typedef",
+		"extern", "return", "union",
+		"const", "unsigned",
+		"continue", "for", "signed",
+		"default", "goto", "sizeof", "volatile",
+		"do", "if", "static", "while"
+	]
+}
