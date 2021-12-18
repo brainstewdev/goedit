@@ -225,7 +225,7 @@ func PrintLines(lines []string, from int) {
 			}
 		}
 		// vado a capo
-		fmt.Println()
+		fmt.Print("\n\r");
 	}
 }
 func WriteSlice(writer *bufio.Writer, linee []string) {
@@ -249,4 +249,46 @@ func RemoveLine(linee []string, pos int) []string {
 }
 func ClearScreen() {
 	fmt.Print("\033[H\033[2J")
+}
+func Move(lines []string, start_line *int) {
+	// read a character directly from the keyboard.
+	// if the character is j -> go up a line
+	// if the character is k -> go down a line
+	// if the character is ESC return to the normal cicle
+	// fd 0 is stdin
+	state, err := term.MakeRaw(0)
+	if err != nil {
+		return
+	}
+	defer func() {
+		if err := term.Restore(0, state); err != nil {
+			SetColor("255;0;0", false)
+			fmt.Println("Error restoring terminal state!")
+		}
+	}()
+
+	in := bufio.NewReader(os.Stdin)
+	for {
+		r, _, err := in.ReadRune()
+		if err != nil {
+			break
+		}
+		if r == 'j' {
+			if *start_line > 0 {
+				*start_line--
+			}
+		}
+		if r == 'k' {
+			if *start_line < len(lines) {
+				*start_line++
+			}
+		}
+
+		if r == 'q' {
+			break
+		}
+
+		PrintLines(lines, *start_line)
+
+	}
 }
