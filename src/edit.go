@@ -18,6 +18,8 @@ import (
 var keywords utility.ImportantWordsType
 var colorschemes map[string]utility.SchemeType
 var cur_scheme string
+var start_line int
+var number_of_line int = 49
 
 func main() {
 	// prendi nome file da argomenti
@@ -29,7 +31,9 @@ func main() {
 			return
 	}
 		
-	
+	// inizializza il modulo delle utilità
+	utility.Initialize();
+
 	// se il file ha un'estensione cerco nella cartella keywords per le keyword di quel linguaggio
 	// questo perchè almeno poi nella stampa posso evidenziarle
 	if strings.Index(file_name, ".") != -1 {
@@ -88,9 +92,8 @@ func main() {
 	// CICLO OPERAZIONI PARTE DA QUA
 	for !quit {
 		// pulisco lo schermo e scrivo a schermo tutte le linee
-		utility.PrintLines(lines)
 		utility.ClearScreen()
-		utility.PrintLines(lines)
+		utility.PrintLines(lines, start_line)
 		// prendo il comando in input
 		/*
 			comandi disponibili:
@@ -174,6 +177,7 @@ func main() {
 					cur_scheme = cmd_args[1]
 					// set the scheme in the utility function 
 					utility.SetScheme(colorschemes[cur_scheme])
+					utility.PrintLines(lines, start_line)
 				}
 			}
 		case []rune(com)[0] == 'q':

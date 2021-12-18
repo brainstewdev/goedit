@@ -7,11 +7,33 @@ import (
 	"strconv"
 	"strings"
 	"unicode"
+	"os"
+	"golang.org/x/term"
 )
 
 var currentScheme SchemeType
 var keywords ImportantWordsType
+var terminalLines, terminalCols int
 
+func terminalSize(fd int) (cols, lines int, ok  error) {
+
+	if term.IsTerminal(fd){
+		lines, cols, ok = term.GetSize(fd);				
+	}else{
+		lines, cols = 0, 0;
+	}
+	return;
+}
+func Initialize(){
+	lines, cols, ok := terminalSize(int(os.Stdin.Fd()));
+	if ok == nil {
+		fmt.Println("tutto ok, nessun errore, ho ottenuto", lines, cols);
+		terminalLines, terminalCols = lines, cols
+	} else {
+		terminalLines, terminalCols = 0, 0
+		fmt.Println("errore nell'inizializzazione: ", ok);
+	}
+}
 func JoinLines(linee []string) string {
 	var sb strings.Builder
 	for _, v := range linee {
@@ -122,82 +144,85 @@ func SetColor(rgb string, background bool) {
 	}
 }
 
-func PrintLines(lines []string) {
-
+func PrintLines(lines []string, from int) {
 	// stampo riga per riga con l'indice a sinistra
-	for i := 0; i < len(lines); i++ {
-		// per evidenziare le parole:
-		/*
-			separo ogni linea in tokens divisi dallo spazio
-			se il token corrente è incluso in una delle slice di keywords lo coloro con il colore adatto
-			altrimenti rimane con il colore standard
-		*/
-		// SE sono state aperte delle virgolette continuo a stampare con il colore delle stringhe letterali
-		// fino a quando incontro una parola che contiene delle virgolette
-		// nel testo fra virgolette NON ci deve essere evidenziazione sintattica
-		printing_string_literal := false
-		SetColor(currentScheme.Reset, false)
-		SetColor(currentScheme.Background, true)
-		fmt.Print(i, "\t: ")
-		SetColor(currentScheme.Base, false)
-		tokens := strings.Split(lines[i], " ")
-		for _, v := range tokens {
-			// controllo, se il token corrente contiene un " allora devo stampare la parte fino a quello e poi metto printing_string_literal a vero
-			disable_print := false
-			if indice_start := strings.Index(v, "\""); indice_start != -1 {
-				// controllo se è un token che inizia e finisce con le virgolette
-				if ([]rune(v))[0] == ([]rune(v))[len([]rune(v))-1] && string(([]rune(v))[0]) == "\"" {
-					SetColor(currentScheme.StringsLiterals, false)
-					fmt.Print(v)
-					SetColor(currentScheme.Reset, false)
-					disable_print = true
-				} else {
-					if !printing_string_literal {
-						printing_string_literal = true
-						// quello che avviene quando becco la prima virgoletta
-						// stampo quello che c'è prima delle virgolette
-						fmt.Print(v[:indice_start])
-						// stampo quello che c'è dopo
+	for i := from; i-from < terminalLines-1; i++ {
+		if i >= len(lines) {
+			fmt.Print("-")
+		} else {
+			// per evidenziare le parole:
+			/*
+				separo ogni linea in tokens divisi dallo spazio
+				se il token corrente è incluso in una delle slice di keywords lo coloro con il colore adatto
+				altrimenti rimane con il colore standard
+			*/
+			// SE sono state aperte delle virgolette continuo a stampare con il colore delle stringhe letterali
+			// fino a quando incontro una parola che contiene delle virgolette
+			// nel testo fra virgolette NON ci deve essere evidenziazione sintattica
+			printing_string_literal := false
+			SetColor(currentScheme.Reset, false)
+			SetColor(currentScheme.Background, true)
+			fmt.Print(i, "\t: ")
+			SetColor(currentScheme.Base, false)
+			tokens := strings.Split(lines[i], " ")
+			for _, v := range tokens {
+				// controllo, se il token corrente contiene un " allora devo stampare la parte fino a quello e poi metto printing_string_literal a vero
+				disable_print := false
+				if indice_start := strings.Index(v, "\""); indice_start != -1 {
+					// controllo se è un token che inizia e finisce con le virgolette
+					if ([]rune(v))[0] == ([]rune(v))[len([]rune(v))-1] && string(([]rune(v))[0]) == "\"" {
 						SetColor(currentScheme.StringsLiterals, false)
-						fmt.Print((v[indice_start:]))
-						fmt.Print(" ")
+						fmt.Print(v)
+						SetColor(currentScheme.Reset, false)
 						disable_print = true
 					} else {
-						printing_string_literal = false
-						fmt.Print(v[:indice_start+1])
-						// resetta il colore e mette printing_string_literal a false
-						SetColor(currentScheme.Reset, false)
-						fmt.Print((v[indice_start+1:]))
-						disable_print = true
-						fmt.Print(" ")
+						if !printing_string_literal {
+							printing_string_literal = true
+							// quello che avviene quando becco la prima virgoletta
+							// stampo quello che c'è prima delle virgolette
+							fmt.Print(v[:indice_start])
+							// stampo quello che c'è dopo
+							SetColor(currentScheme.StringsLiterals, false)
+							fmt.Print((v[indice_start:]))
+							fmt.Print(" ")
+							disable_print = true
+						} else {
+							printing_string_literal = false
+							fmt.Print(v[:indice_start+1])
+							// resetta il colore e mette printing_string_literal a false
+							SetColor(currentScheme.Reset, false)
+							fmt.Print((v[indice_start+1:]))
+							disable_print = true
+							fmt.Print(" ")
+						}
 					}
 				}
-			}
 
-			if !printing_string_literal {
-				switch {
-				case SliceContains(keywords.Keywords, v):
-					// stampo l'escape code per il colore delle keyword
-					SetColor(currentScheme.Keywords, false)
+				if !printing_string_literal {
+					switch {
+					case SliceContains(keywords.Keywords, v):
+						// stampo l'escape code per il colore delle keyword
+						SetColor(currentScheme.Keywords, false)
 
-				case SliceContains(keywords.Types, v):
-					// stampo l'escape code per il colore delle keyword
-					SetColor(currentScheme.Types, false)
-				case TokenContainsValidNumber(v):
-					SetColor(currentScheme.Numbers, false)
-				default:
-					SetColor(currentScheme.Base, false)
+					case SliceContains(keywords.Types, v):
+						// stampo l'escape code per il colore delle keyword
+						SetColor(currentScheme.Types, false)
+					case TokenContainsValidNumber(v):
+						SetColor(currentScheme.Numbers, false)
+					default:
+						SetColor(currentScheme.Base, false)
+					}
 				}
+				// stampo il token
+				if !disable_print {
+					fmt.Print(v)
+				}
+				// resetto il colore
+				if !printing_string_literal {
+					SetColor(currentScheme.Reset, false)
+				}
+				fmt.Print(" ")
 			}
-			// stampo il token
-			if !disable_print {
-				fmt.Print(v)
-			}
-			// resetto il colore
-			if !printing_string_literal {
-				SetColor(currentScheme.Reset, false)
-			}
-			fmt.Print(" ")
 		}
 		// vado a capo
 		fmt.Println()
