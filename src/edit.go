@@ -9,27 +9,31 @@ import (
 	"bufio"
 	"encoding/json"
 	"fmt"
+	"github.com/brainstew927/goedit/utility"
 	"os"
 	"strconv"
 	"strings"
-	"github.com/brainstew927/goedit/utility"
 )
 
 var keywords utility.ImportantWordsType
 var colorschemes map[string]utility.SchemeType
 var cur_scheme string
+var start_line int
+
 
 func main() {
 	// prendi nome file da argomenti
 	var file_name string
 	if len(os.Args) > 1 {
 		file_name = os.Args[1]
-		} else {
-			fmt.Println("Usage: edit filename")
-			return
+	} else {
+		fmt.Println("Usage: edit filename")
+		return
 	}
-		
-	
+
+	// inizializza il modulo delle utilità
+	utility.Initialize()
+
 	// se il file ha un'estensione cerco nella cartella keywords per le keyword di quel linguaggio
 	// questo perchè almeno poi nella stampa posso evidenziarle
 	if strings.Index(file_name, ".") != -1 {
@@ -88,9 +92,8 @@ func main() {
 	// CICLO OPERAZIONI PARTE DA QUA
 	for !quit {
 		// pulisco lo schermo e scrivo a schermo tutte le linee
-		utility.PrintLines(lines)
 		utility.ClearScreen()
-		utility.PrintLines(lines)
+		utility.PrintLines(lines, start_line)
 		// prendo il comando in input
 		/*
 			comandi disponibili:
@@ -101,85 +104,88 @@ func main() {
 		var com string
 		fmt.Print(":")
 		com = utility.ReadLine(os.Stdin)
-		if com != ""{
-		switch {
-		case []rune(com)[0] == 'b':
-			// devo controllare che vi siano x e n
-			cmd_args := strings.Split(com, " ")
-			if len(cmd_args) == 3 && utility.IsStringNumber(cmd_args[1]) && utility.IsStringNumber(cmd_args[2]) {
-				// prendo i numeri come interi per comodità
-				var x, n int
-				x, _ = strconv.Atoi(cmd_args[1])
-				n, _ = strconv.Atoi(cmd_args[2])
-				// eseguo il comando
-				for i := 0; i < n; i++ {
-					lines = utility.AddLine(lines, " ", x)
-				}
-			}
-		case []rune(com)[0] == 'i':
-			// devo controllare che vi siano x e n
-			cmd_args := strings.Split(com, " ")
-
-			// tutto cioò che viene messo dopo il secondo spazio viene preso come testo da inserire
-			if len(cmd_args) >= 3 && utility.IsStringNumber(cmd_args[1]) {
-
-				// prendo posizione come stringa e il testo da inserire nella posizione come stringa
-				stringa_da_inserire := strings.Join(strings.Split(com, " ")[2:], " ")
-				i, _ := strconv.Atoi(cmd_args[1])
-				fmt.Println(len(lines)-1, " i:", i)
-				// se la riga selezionata non è inclusa nella lunghezza corrente allora inserisco righe bianche fino a quando lo è
-				if i > len(lines) {
-					lun := len(lines)
-					for j := 0; j < lun; j++ {
-						lines = utility.AddLine(lines, " ", len(lines)-1)
+		if com != "" {
+			switch {
+			case []rune(com)[0] == 'b':
+				// devo controllare che vi siano x e n
+				cmd_args := strings.Split(com, " ")
+				if len(cmd_args) == 3 && utility.IsStringNumber(cmd_args[1]) && utility.IsStringNumber(cmd_args[2]) {
+					// prendo i numeri come interi per comodità
+					var x, n int
+					x, _ = strconv.Atoi(cmd_args[1])
+					n, _ = strconv.Atoi(cmd_args[2])
+					// eseguo il comando
+					for i := 0; i < n; i++ {
+						lines = utility.AddLine(lines, " ", x)
 					}
 				}
-				// eseguo il comando
-				lines = utility.AddLine(lines, stringa_da_inserire, i)
+			case []rune(com)[0] == 'i':
+				// devo controllare che vi siano x e n
+				cmd_args := strings.Split(com, " ")
 
-			}
-		case []rune(com)[0] == 'e':
-			// devo controllare che vi siano x e n
-			cmd_args := strings.Split(com, " ")
-			// tutto cioò che viene messo dopo il secondo spazio viene preso come testo da inserire
-			if len(cmd_args) >= 3 && utility.IsStringNumber(cmd_args[1]) {
-				// prendo posizione come stringa e il testo da inserire nella posizione come stringa
-				stringa_da_inserire := strings.Join(strings.Split(com, " ")[2:], " ")
-				i, _ := strconv.Atoi(cmd_args[1])
-				fmt.Println("stringa_da_inserire")
-				fmt.Println(stringa_da_inserire)
-				// eseguo il comando
-				lines[i] = stringa_da_inserire
-			}
-		case []rune(com)[0] == 'D':
-			// elimina la riga nell'indice cmd_args[1]
-			cmd_args := strings.Split(com, " ")
-			if len(cmd_args) == 2 && utility.IsStringNumber(cmd_args[1]) {
-				i, _ := strconv.Atoi(cmd_args[1])
-				lines = utility.RemoveLine(lines, i)
-			}
-		case []rune(com)[0] == 'd':
-			// mette una riga vuota alla posizione cmd_args[1]
-			cmd_args := strings.Split(com, " ")
-			if len(cmd_args) == 2 && utility.IsStringNumber(cmd_args[1]) {
-				i, _ := strconv.Atoi(cmd_args[1])
-				lines[i] = " "
-			}
+				// tutto cioò che viene messo dopo il secondo spazio viene preso come testo da inserire
+				if len(cmd_args) >= 3 && utility.IsStringNumber(cmd_args[1]) {
 
-		case []rune(com)[0] == 't':
-			cmd_args := strings.Split(com, " ")
-			if len(cmd_args) == 2 {
-				_, ok := colorschemes[cmd_args[1]]
-				if ok {
-					cur_scheme = cmd_args[1]
-					// set the scheme in the utility function 
-					utility.SetScheme(colorschemes[cur_scheme])
+					// prendo posizione come stringa e il testo da inserire nella posizione come stringa
+					stringa_da_inserire := strings.Join(strings.Split(com, " ")[2:], " ")
+					i, _ := strconv.Atoi(cmd_args[1])
+					fmt.Println(len(lines)-1, " i:", i)
+					// se la riga selezionata non è inclusa nella lunghezza corrente allora inserisco righe bianche fino a quando lo è
+					if i > len(lines) {
+						lun := len(lines)
+						for j := 0; j < lun; j++ {
+							lines = utility.AddLine(lines, " ", len(lines)-1)
+						}
+					}
+					// eseguo il comando
+					lines = utility.AddLine(lines, stringa_da_inserire, i)
+
 				}
+			case []rune(com)[0] == 'e':
+				// devo controllare che vi siano x e n
+				cmd_args := strings.Split(com, " ")
+				// tutto cioò che viene messo dopo il secondo spazio viene preso come testo da inserire
+				if len(cmd_args) >= 3 && utility.IsStringNumber(cmd_args[1]) {
+					// prendo posizione come stringa e il testo da inserire nella posizione come stringa
+					stringa_da_inserire := strings.Join(strings.Split(com, " ")[2:], " ")
+					i, _ := strconv.Atoi(cmd_args[1])
+					fmt.Println("stringa_da_inserire")
+					fmt.Println(stringa_da_inserire)
+					// eseguo il comando
+					lines[i] = stringa_da_inserire
+				}
+			case []rune(com)[0] == 'D':
+				// elimina la riga nell'indice cmd_args[1]
+				cmd_args := strings.Split(com, " ")
+				if len(cmd_args) == 2 && utility.IsStringNumber(cmd_args[1]) {
+					i, _ := strconv.Atoi(cmd_args[1])
+					lines = utility.RemoveLine(lines, i)
+				}
+			case []rune(com)[0] == 'd':
+				// mette una riga vuota alla posizione cmd_args[1]
+				cmd_args := strings.Split(com, " ")
+				if len(cmd_args) == 2 && utility.IsStringNumber(cmd_args[1]) {
+					i, _ := strconv.Atoi(cmd_args[1])
+					lines[i] = " "
+				}
+
+			case []rune(com)[0] == 't':
+				cmd_args := strings.Split(com, " ")
+				if len(cmd_args) == 2 {
+					_, ok := colorschemes[cmd_args[1]]
+					if ok {
+						cur_scheme = cmd_args[1]
+						// set the scheme in the utility function
+						utility.SetScheme(colorschemes[cur_scheme])
+						utility.PrintLines(lines, start_line)
+					}
+				}
+			case []rune(com)[0] == 'm':
+				utility.Move(lines, &start_line)
+			case []rune(com)[0] == 'q':
+				quit = true
+
 			}
-		case []rune(com)[0] == 'q':
-			quit = true
-		
-		}
 		}
 		// fmt.Println("Insert the new value for line", indice, ":")
 		// ora ho all'interno di indice la riga voluta:
