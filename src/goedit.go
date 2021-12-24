@@ -91,6 +91,7 @@ func main() {
 	var quit bool
 	// CICLO OPERAZIONI PARTE DA QUA
 	for !quit {
+		utility.PrintLines(lines, start_line)
 		// pulisco lo schermo e scrivo a schermo tutte le linee
 		utility.ClearScreen()
 		utility.PrintLines(lines, start_line)
