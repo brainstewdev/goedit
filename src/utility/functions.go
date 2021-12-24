@@ -8,12 +8,15 @@ import (
 	"strings"
 	"unicode"
 	"os"
+	"regexp"
 	"golang.org/x/term"
 )
 
 var currentScheme SchemeType
 var keywords ImportantWordsType
 var terminalLines, terminalCols int
+
+var tokenExpr *regexp.Regexp
 
 func terminalSize(fd int) (cols, lines int, ok  error) {
 
@@ -29,6 +32,7 @@ func Initialize(){
 	if ok == nil {
 		fmt.Println("tutto ok, nessun errore, ho ottenuto", lines, cols);
 		terminalLines, terminalCols = lines, cols
+		tokenExpr = regexp.MustCompile(`[\w!]+|. gm`)
 	} else {
 		terminalLines, terminalCols = 0, 0
 		fmt.Println("errore nell'inizializzazione: ", ok);
@@ -144,6 +148,11 @@ func SetColor(rgb string, background bool) {
 	}
 }
 
+// function which returns the tokens in the line
+func GetTokens(line string) []string{
+	return tokenExpr.FindAllString(line, -1)
+}
+
 func PrintLines(lines []string, from int) {
 	// stampo riga per riga con l'indice a sinistra
 	for i := from; i-from < terminalLines-1; i++ {
@@ -164,7 +173,7 @@ func PrintLines(lines []string, from int) {
 			SetColor(currentScheme.Background, true)
 			fmt.Print(i, "\t: ")
 			SetColor(currentScheme.Base, false)
-			tokens := strings.Split(lines[i], " ")
+			tokens := GetTokens(lines[i]) 
 			for _, v := range tokens {
 				// controllo, se il token corrente contiene un " allora devo stampare la parte fino a quello e poi metto printing_string_literal a vero
 				disable_print := false
@@ -184,7 +193,6 @@ func PrintLines(lines []string, from int) {
 							// stampo quello che c'è dopo
 							SetColor(currentScheme.StringsLiterals, false)
 							fmt.Print((v[indice_start:]))
-							fmt.Print(" ")
 							disable_print = true
 						} else {
 							printing_string_literal = false
@@ -193,7 +201,6 @@ func PrintLines(lines []string, from int) {
 							SetColor(currentScheme.Reset, false)
 							fmt.Print((v[indice_start+1:]))
 							disable_print = true
-							fmt.Print(" ")
 						}
 					}
 				}
@@ -221,7 +228,7 @@ func PrintLines(lines []string, from int) {
 				if !printing_string_literal {
 					SetColor(currentScheme.Reset, false)
 				}
-				fmt.Print(" ")
+
 			}
 		}
 		// vado a capo
