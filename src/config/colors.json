@@ -18,6 +18,16 @@
             "types": "251;183;140",
             "numbers": "64;8;121",
             "stringsLiterals": "65;13;129"
+        },
+        "eva": 
+        {
+            "background": "89;38;97",
+            "base": "207;203;210",
+            "reset": "126;116;134",
+            "keywords": "247;185;45",
+            "types": "163;218;88",
+            "numbers": "163;218;88",
+            "stringsLiterals": "163;218;88"
         }
     
 }
